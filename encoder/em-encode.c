@@ -617,22 +617,20 @@ void printDuplicates( )
 }
 
 void printConnections( ) {
-//	int index, rotation;
+  int a = (rows-2) * (columns -2);
+  int b = 2*rows + 2 * columns -8;
+  int c = 2*nrofbordercolors*(rows+columns-2);
+  int d = nrofcentercolors * (2*(rows-1)*(columns-1) - rows - columns + 2);
 
-	int a = (rows-2) * (columns -2);
-	int b = 2*rows + 2 * columns -8;
-	int c = 2*nrofbordercolors*(rows+columns-2);
-	int d = nrofcentercolors * (2*(rows-1)*(columns-1) - rows - columns + 2);
+  nVar = 16 + a*a + b*b + c + d;
 
-	nVar = 16 + a*a + b*b + c + d;
+  nCls = 10 * nVar;
 
-	nCls = 10 * nVar;
+  printf ("p cnf %i %i\n", nVar, nCls);
 
-	printf("p cnf %i %i\n", nVar, nCls );
+  printPositive ();
 
-	printPositive();
-
-	printDuplicates();
+  printDuplicates ();
 }
 
 unsigned int map( int color, int center_flag )
