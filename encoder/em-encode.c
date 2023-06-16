@@ -905,10 +905,10 @@ int computeClauses( int size )
 	return result;
 }
 
-int computeDummies( int size )
-{
-	if( size <= 5 )	return 0;
-	return (int) (size - 3) / 2;
+int computeDummies (int size) {
+  if (size <= 5)
+    return 0;
+  return (int) (size - 3) / 2;
 }
 
 void printDuplicates( )
@@ -1074,9 +1074,7 @@ void initPiece( int index, int north, int east, int south, int west ) {
 
 void turnCorners( )
 {
-	int index;
-
-	for( index = 1; index <= nrofpieces; index++ )
+	for (int index = 1; index <= nrofpieces; index++)
 	    if( getPieceType( index ) == CORNER_PIECE )
 	    {
 		if( (piece[ index ][ 0 ] == 0) && (piece[ index ][ 1 ] == 0) )
@@ -1090,8 +1088,7 @@ void turnCorners( )
 
 void parse( char * filename  )
 {
-	int i, _rows, _columns, north, east, south, west;
-	int type, nrofcorners = 0, nrofborders = 0;
+	int nrofcorners = 0, nrofborders = 0;
 	FILE *file;
 
 	file = fopen( filename , "r");
@@ -1100,15 +1097,16 @@ void parse( char * filename  )
 #ifdef HINTS
 	fscanf( file, "%i\n", &nrofhints );
 
-	for( i = 0; i < nrofhints; i++ )
+	for(int i = 0; i < nrofhints; i++ )
 	    fscanf( file, "%i %i %i %i\n", &hint[ i ][ 0 ], & hint[ i ][ 1 ], &hint[ i ][ 2 ], &hint[ i ][ 3 ] );
 #endif
 	if( file )
 	   while( !feof(file) )
 	   {
+   	        int north, east, south, west;
 		fscanf( file, "%i %i %i %i\n", &north, &east, &south, &west );
 		initPiece( ++nrofpieces, north, east, south, west );
-		type = getPieceType( nrofpieces );
+		int type = getPieceType( nrofpieces );
 		if( type == CORNER_PIECE ) nrofcorners++;
 		if( type == BORDER_PIECE ) nrofborders++;
 	   }
@@ -1116,9 +1114,9 @@ void parse( char * filename  )
 	assert( nrofcorners == 4 );
 	assert( (nrofborders % 2) == 0 );
 
-	for ( _rows = 3; _rows <= 16; _rows++ )
+	for (int _rows = 3; _rows <= 16; _rows++ )
 	{
-	   _columns = (nrofborders / 2) - _rows + 4;
+	   int _columns = (nrofborders / 2) - _rows + 4;
 	   if( (_rows * _columns) == nrofpieces ) {rows = _rows; columns = _columns; break; }
 	}
 
