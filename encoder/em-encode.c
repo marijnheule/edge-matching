@@ -4,16 +4,11 @@
 #include <assert.h>
 
 //#define BLOCKED
-#define MAPPING
-#define ATMOSTONE			// turn on for explicit one-on-one mapping
+//#define ATMOSTONE			// turn on for explicit one-on-one mapping
 //#define FBCOLORS			// turn on for forbidden color clauses
 #define LIMITED
 #define HINTS
-//#define PATTERN
-//#define NOTWO
-//#define NOTHREE
-//#define NOFOUR			// Don't use three patterns and force?
-//#define POSONLY
+//#define PATTERN			// to deal with duplicates
 
 #define CENTER_PIECE	0
 #define BORDER_PIECE	1
@@ -32,7 +27,7 @@ unsigned int columns = COLUMNS;
 unsigned int nrofcolors;
 unsigned int nrofbordercolors, nrofcentercolors;
 
-unsigned int nrofvars, nrofdummies, nrofclauses;
+unsigned int nVar, nDum, nCls;
 unsigned int vars_offset;
 
 int piece    [ 257 ][ 4 ];
@@ -57,8 +52,7 @@ int getPieceType (int index) {
     if (piece[ index ][ rotation ] == 0)
       count++;
 
-  return count;
-}
+  return count; }
 
 int getDiamondType (int index) {
   if (index < columns)                    return 1;
@@ -66,393 +60,7 @@ int getDiamondType (int index) {
   if ((index % (2*columns-1)) == columns) return 1;
   if ((index % (2*columns-1)) == 0      ) return 1;
 
-  return 0;
-}
-
-void blockFourPattern( ) {
-	int i, j, k, l, r, p, size;
-
-	size = (rows-2) * (columns-2);
-
-	for( i = 1; i <= nrofcentercolors; i++ )
-	    for( j = 1; j <= nrofcentercolors; j++ )
-	    {
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != CENTER_PIECE ) continue;
-		   if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) ) goto center_A;
-		   if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) ) goto center_A;
-		   if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) ) goto center_A;
-		   if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) ) goto center_A;
-		} continue; center_A:;
-
-	        for( k = 1; k <= nrofcentercolors; k++ )
-		{
-		    for( p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 2 ] == k) ) goto center_B;
-		        if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 3 ] == k) ) goto center_B;
-		        if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 0 ] == k) ) goto center_B;
-		        if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 1 ] == k) ) goto center_B;
-		    }   continue; center_B:;
-
-		    for( p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == j) && (piece[ p ][ 1 ] == k) ) goto center_C;
-		        if( (piece[ p ][ 1 ] == j) && (piece[ p ][ 2 ] == k) ) goto center_C;
-		        if( (piece[ p ][ 2 ] == j) && (piece[ p ][ 3 ] == k) ) goto center_C;
-		        if( (piece[ p ][ 3 ] == j) && (piece[ p ][ 0 ] == k) ) goto center_C;
-		    }   continue; center_C:;
-
-		    for( p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) && (piece[ p ][ 2 ] == k) ) goto center_D;
-		        if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) && (piece[ p ][ 3 ] == k) ) goto center_D;
-		        if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) && (piece[ p ][ 0 ] == k) ) goto center_D;
-		        if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) && (piece[ p ][ 1 ] == k) ) goto center_D;
-		    }   continue; center_D:;
-
-	            for( l = 1; l <= nrofcentercolors; l++ )
-		    {
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		            if( getPieceType( p ) != CENTER_PIECE ) continue;
-		            if( (piece[ p ][ 0 ] == k) && (piece[ p ][ 1 ] == l) ) goto center_E;
-		            if( (piece[ p ][ 1 ] == k) && (piece[ p ][ 2 ] == l) ) goto center_E;
-		            if( (piece[ p ][ 2 ] == k) && (piece[ p ][ 3 ] == l) ) goto center_E;
-		            if( (piece[ p ][ 3 ] == k) && (piece[ p ][ 0 ] == l) ) goto center_E;
-		        }   continue; center_E:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		            if( getPieceType( p ) != CENTER_PIECE ) continue;
-		            if( (piece[ p ][ 0 ] == l) && (piece[ p ][ 1 ] == i) ) goto center_F;
-		            if( (piece[ p ][ 1 ] == l) && (piece[ p ][ 2 ] == i) ) goto center_F;
-		            if( (piece[ p ][ 2 ] == l) && (piece[ p ][ 3 ] == i) ) goto center_F;
-		            if( (piece[ p ][ 3 ] == l) && (piece[ p ][ 0 ] == i) ) goto center_F;
-		        }   continue; center_F:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		            if( getPieceType( p ) != CENTER_PIECE ) continue;
-		            if( (piece[ p ][ 0 ] == j) && (piece[ p ][ 2 ] == l) ) goto center_K;
-		            if( (piece[ p ][ 1 ] == j) && (piece[ p ][ 3 ] == l) ) goto center_K;
-		            if( (piece[ p ][ 2 ] == j) && (piece[ p ][ 0 ] == l) ) goto center_K;
-		            if( (piece[ p ][ 3 ] == j) && (piece[ p ][ 1 ] == l) ) goto center_K;
-		        }   continue; center_K:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		           if( getPieceType( p ) != CENTER_PIECE ) continue;
-		           if( (piece[ p ][ 0 ] == j) && (piece[ p ][ 1 ] == k) && (piece[ p ][ 2 ] == l) ) goto center_G;
-		           if( (piece[ p ][ 1 ] == j) && (piece[ p ][ 2 ] == k) && (piece[ p ][ 3 ] == l) ) goto center_G;
-		           if( (piece[ p ][ 2 ] == j) && (piece[ p ][ 3 ] == k) && (piece[ p ][ 0 ] == l) ) goto center_G;
-		           if( (piece[ p ][ 3 ] == j) && (piece[ p ][ 0 ] == k) && (piece[ p ][ 1 ] == l) ) goto center_G;
-		        }  continue; center_G:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		           if( getPieceType( p ) != CENTER_PIECE ) continue;
-		           if( (piece[ p ][ 0 ] == k) && (piece[ p ][ 1 ] == l) && (piece[ p ][ 2 ] == i) ) goto center_H;
-		           if( (piece[ p ][ 1 ] == k) && (piece[ p ][ 2 ] == l) && (piece[ p ][ 3 ] == i) ) goto center_H;
-		           if( (piece[ p ][ 2 ] == k) && (piece[ p ][ 3 ] == l) && (piece[ p ][ 0 ] == i) ) goto center_H;
-		           if( (piece[ p ][ 3 ] == k) && (piece[ p ][ 0 ] == l) && (piece[ p ][ 1 ] == i) ) goto center_H;
-		        }  continue; center_H:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		           if( getPieceType( p ) != CENTER_PIECE ) continue;
-		           if( (piece[ p ][ 0 ] == l) && (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) ) goto center_I;
-		           if( (piece[ p ][ 1 ] == l) && (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) ) goto center_I;
-		           if( (piece[ p ][ 2 ] == l) && (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) ) goto center_I;
-		           if( (piece[ p ][ 3 ] == l) && (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) ) goto center_I;
-		        }  continue; center_I:;
-
-		        for( p = 1; p <= nrofpieces; p++ )
-		        {
-		           if( getPieceType( p ) != CENTER_PIECE ) continue;
-		           if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) &&
-			       (piece[ p ][ 2 ] == k) && (piece[ p ][ 3 ] == l) ) goto center_end;
-		           if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) &&
-			       (piece[ p ][ 3 ] == k) && (piece[ p ][ 0 ] == l) ) goto center_end;
-		           if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) &&
-			       (piece[ p ][ 0 ] == k) && (piece[ p ][ 1 ] == l) ) goto center_end;
-		           if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) &&
-			       (piece[ p ][ 1 ] == k) && (piece[ p ][ 2 ] == l) ) goto center_end;
-		        }
-
-		        for( p = 0; p < size; p++ )
-		        {
-			    printf("-%i -%i -%i -%i 0\n", center_diamond[ p ][ 0 ] + i, center_diamond[ p ][ 1 ] + j,
-			                                  center_diamond[ p ][ 2 ] + k, center_diamond[ p ][ 3 ] + l );
-//		 	    printf("-%i -%i -%i -%i 0\n", center_diamond[ p ][ 1 ] + i, center_diamond[ p ][ 2 ] + j,
-//			                              center_diamond[ p ][ 3 ] + k, center_diamond[ p ][ 0 ] + l );
-///			    printf("-%i -%i -%i -%i 0\n", center_diamond[ p ][ 2 ] + i, center_diamond[ p ][ 3 ] + j,
-//			                              center_diamond[ p ][ 0 ] + k, center_diamond[ p ][ 1 ] + l );
-//			    printf("-%i -%i -%i -%i 0\n", center_diamond[ p ][ 3 ] + i, center_diamond[ p ][ 0 ] + j,
-//			                              center_diamond[ p ][ 1 ] + k, center_diamond[ p ][ 2 ] + l );
-		        }
-
-		       printf("c found full center block %i %i %i %i\n", i, j, k, l );
-
-		       center_end:;
-		    }
-		}
-	    }
-
-
-}
-void blockThreePattern( )
-{
-	int size = 2*rows + 2*columns - 8;
-
-	for(int i = 1; i <= nrofbordercolors; i++ )
-	    for(int j = 1; j <= nrofcentercolors; j++ )
-	    {
-		for(int p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != BORDER_PIECE ) continue;
-                   int r;
-		   for(r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		   if( (piece[ p ][ (r+1)%4 ] == i) && (piece[ p ][ (r+2)%4 ] == j) ) goto border_first;
-		}
-
-		continue;
-
-		border_first:;
-
-	        for(int k = 1; k <= nrofbordercolors; k++ )
-		{
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != BORDER_PIECE ) continue;
-                        int r;
-		        for(r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		        if( (piece[ p ][ (r+1)%4 ] == i) && (piece[ p ][ (r+3)%4 ] == k) ) goto border_second;
-		    }
-
-		    continue;
-
-		    border_second:;
-
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != BORDER_PIECE ) continue;
-                        int r;
-		        for(r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		        if( (piece[ p ][ (r+2)%4 ] == j) && (piece[ p ][ (r+3)%4 ] == k) ) goto border_third;
-		    }
-
-		    continue;
-
-		    border_third:;
-
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != BORDER_PIECE ) continue;
-                        int r;
-		        for(r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		        if( (piece[ p ][ (r+1)%4 ] == i) &&
-			    (piece[ p ][ (r+2)%4 ] == j) &&
-		            (piece[ p ][ (r+3)%4 ] == k) ) goto border_skip;
-		    }
-
-		    for(int p = 0; p < size; p++ ) printf("-%i -%i -%i 0\n",
-			border_diamond[ p ][ 0 ] + i, border_diamond[ p ][ 1 ] + j, border_diamond[ p ][ 2 ]+ k );
-
-		    printf("c found border block %i %i %i\n", i, j, k );
-
-		    border_skip:;
-		}
-	    }
-
-	size = (rows-2) * (columns-2);
-
-	for(int i = 1; i <= nrofcentercolors; i++ )
-	    for(int j = 1; j <= nrofcentercolors; j++ )
-	    {
-		for(int p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != CENTER_PIECE ) continue;
-		   if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) ) goto center_first;
-		   if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) ) goto center_first;
-		   if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) ) goto center_first;
-		   if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) ) goto center_first;
-		}  continue; center_first:;
-
-	        for(int k = 1; k <= nrofcentercolors; k++ )
-		{
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 2 ] == k) ) goto center_second;
-		        if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 3 ] == k) ) goto center_second;
-		        if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 0 ] == k) ) goto center_second;
-		        if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 1 ] == k) ) goto center_second;
-		    }   continue;  center_second:;
-
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == j) && (piece[ p ][ 1 ] == k) ) goto center_third;
-		        if( (piece[ p ][ 1 ] == j) && (piece[ p ][ 2 ] == k) ) goto center_third;
-		        if( (piece[ p ][ 2 ] == j) && (piece[ p ][ 3 ] == k) ) goto center_third;
-		        if( (piece[ p ][ 3 ] == j) && (piece[ p ][ 0 ] == k) ) goto center_third;
-		    }   continue; center_third:;
-
-		    for(int p = 1; p <= nrofpieces; p++ )
-		    {
-		        if( getPieceType( p ) != CENTER_PIECE ) continue;
-		        if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) && (piece[ p ][ 2 ] == k) ) goto center_skip;
-		        if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) && (piece[ p ][ 3 ] == k) ) goto center_skip;
-		        if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) && (piece[ p ][ 0 ] == k) ) goto center_skip;
-		        if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) && (piece[ p ][ 1 ] == k) ) goto center_skip;
-		    }
-
-		    for(int p = 0; p < size; p++ )
-		    {
-			printf("-%i -%i -%i 0\n", center_diamond[ p ][ 0 ] + i,
-			  center_diamond[ p ][ 1 ] + j, center_diamond[ p ][ 2 ]+ k );
-			printf("-%i -%i -%i 0\n", center_diamond[ p ][ 1 ] + i,
-			  center_diamond[ p ][ 2 ] + j, center_diamond[ p ][ 3 ]+ k );
-			printf("-%i -%i -%i 0\n", center_diamond[ p ][ 2 ] + i,
-			  center_diamond[ p ][ 3 ] + j, center_diamond[ p ][ 0 ]+ k );
-			printf("-%i -%i -%i 0\n", center_diamond[ p ][ 3 ] + i,
-			  center_diamond[ p ][ 0 ] + j, center_diamond[ p ][ 1 ]+ k );
-		    }
-
-		    printf("c found center block %i %i %i\n", i, j, k );
-
-		    center_skip:;
-		}
-	    }
-}
-
-void blockTwoPattern( )
-{
-	int i, j, r, p, size;
-
-	for( i = 1; i <= nrofbordercolors; i++ )
-	    for( j = 1; j <= nrofbordercolors; j++ )
-	    {
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != CORNER_PIECE ) continue;
-		   if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) ) goto corner_next;
-		}
-
-		size = 4;
-		for( p = 0; p < size; p++ )
-		   printf("-%i -%i 0\n", corner_diamond[ p ][ 0 ] + i, corner_diamond[ p ][ 1 ] + j );
-
-		printf("c found block corder pattern %i %i\n", i, j );
-
-		corner_next:;
-
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != BORDER_PIECE ) continue;
-		   for( r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		   if( (piece[ p ][ (r+1)%4 ] == i) && (piece[ p ][ (r+3)%4 ] == j) ) goto border_cross;
-		}
-
-		size = 2*rows + 2*columns - 8;
-		for( p = 0; p < size; p++ )
-		   printf("-%i -%i 0\n", border_diamond[ p ][ 0 ] + i, border_diamond[ p ][ 2 ] + j );
-
-		printf("c found block border pattern %i X %i\n", i, j );
-
-		border_cross:;
-	    }
-
-	size = 2*rows + 2*columns - 8;
-
-	for( i = 1; i <= nrofbordercolors; i++ )
-	    for( j = 1; j <= nrofcentercolors; j++ )
-	    {
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != BORDER_PIECE ) continue;
-		   for( r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		   if( (piece[ p ][ (r+1)%4 ] == i) && (piece[ p ][ (r+2)%4 ] == j) ) goto border_nextA;
-		}
-
-		for( p = 0; p < size; p++ )
-		   printf("-%i -%i 0\n", border_diamond[ p ][ 0 ] + i, border_diamond[ p ][ 1 ] + j );
-
-		printf("c found block border pattern %i %i X\n", i, j );
-
-		border_nextA:;
-
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != BORDER_PIECE ) continue;
-		   for( r = 0; r < 4; r++ ) if( piece[ p ][ r ] == 0 ) break;
-		   if( (piece[ p ][ (r+3)%4 ] == i) && (piece[ p ][ (r+2)%4 ] == j) ) goto border_nextB;
-		}
-
-		for( p = 0; p < size; p++ )
-		   printf("-%i -%i 0\n", border_diamond[ p ][ 2 ] + i, border_diamond[ p ][ 1 ] + j );
-
-		printf("c found block border pattern X %i %i \n", j, i );
-
-		border_nextB:;
-	    }
-
-	size = (rows-2) * (columns-2);
-
-	for( i = 1; i <= nrofcentercolors; i++ )
-	    for( j = 1; j <= nrofcentercolors; j++ )
-	    {
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != CENTER_PIECE ) continue;
-		   if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 1 ] == j) ) goto two_next;
-		   if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 2 ] == j) ) goto two_next;
-		   if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 3 ] == j) ) goto two_next;
-		   if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 0 ] == j) ) goto two_next;
-		}
-
-		for( p = 0; p < size; p++ )
-		{
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 0 ] + i, center_diamond[ p ][ 1 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 1 ] + i, center_diamond[ p ][ 2 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 2 ] + i, center_diamond[ p ][ 3 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 3 ] + i, center_diamond[ p ][ 0 ] + j );
-		}
-
-		printf("c found block pattern %i %i X X\n", i, j );
-
-		two_next:;
-
-		if( j < i ) continue;
-
-		for( p = 1; p <= nrofpieces; p++ )
-		{
-		   if( getPieceType( p ) != CENTER_PIECE ) continue;
-		   if( (piece[ p ][ 0 ] == i) && (piece[ p ][ 2 ] == j) ) goto two_cross;
-		   if( (piece[ p ][ 1 ] == i) && (piece[ p ][ 3 ] == j) ) goto two_cross;
-		   if( (piece[ p ][ 2 ] == i) && (piece[ p ][ 0 ] == j) ) goto two_cross;
-		   if( (piece[ p ][ 3 ] == i) && (piece[ p ][ 1 ] == j) ) goto two_cross;
-		}
-
-		for( p = 0; p < size; p++ )
-		{
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 0 ] + i, center_diamond[ p ][ 2 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 1 ] + i, center_diamond[ p ][ 3 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 2 ] + i, center_diamond[ p ][ 0 ] + j );
-		   printf("-%i -%i 0\n", center_diamond[ p ][ 3 ] + i, center_diamond[ p ][ 1 ] + j );
-		}
-
-		printf("c found block pattern %i X %i X\n", i, j );
-
-		two_cross:;
-	    }
-}
-
+  return 0; }
 
 void printAtMostOne (int *list, int size) {
 #ifdef BLOCKED
@@ -488,55 +96,50 @@ void printAtMostOne (int *list, int size) {
 	while (i < size);
 }
 
-void printDiamonds( )
-{
-	int offset = dia_map[ 0 ], list[ 257 ];
+void printDiamonds () {
+  int offset = dia_map[ 0 ], list[ 257 ];
 
-	for(int i = 1; i <= nrofdiamonds; i++ )
-	{
-	    dia_map[ i ] = offset;
-	    if( getDiamondType( i ) )
-	    {
-		for(int j = 1; j <= nrofbordercolors; j++ ) { printf("%i ", offset + j ); list[ j - 1 ] = offset + j; }
-		printf("0\n");
+  for(int i = 1; i <= nrofdiamonds; i++ ) {
+    dia_map[ i ] = offset;
+    if (getDiamondType( i ) ) {
+      for(int j = 1; j <= nrofbordercolors; j++ ) {
+        printf("%i ", offset + j );
+        list[ j - 1 ] = offset + j; }
+      printf("0\n");
 
-		printAtMostOne( list, nrofbordercolors );
+      printAtMostOne( list, nrofbordercolors );
 
-		offset += nrofbordercolors;
-	    }
-	    else
-	    {
-		for(int j = 1; j <= nrofcentercolors; j++ ) { printf("%i ", offset + j ); list[ j - 1] = offset+ j; }
-		printf("0\n");
+      offset += nrofbordercolors; }
+    else {
+      for (int j = 1; j <= nrofcentercolors; j++ ) {
+        printf("%i ", offset + j );
+        list[ j - 1] = offset+ j; }
+      printf("0\n");
 
-		printAtMostOne( list, nrofcentercolors );
+      printAtMostOne( list, nrofcentercolors );
 
-		offset += nrofcentercolors;
-	    }
-	}
+      offset += nrofcentercolors; } }
 }
 
-int getVariable( int index, int row, int column )
-{
-	int result = var_map[ index ];
+int getVariable( int index, int row, int column ) {
+  int result = var_map[ index ];
 
-	if( (row ==       0 ) && (column ==          0 ) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 1; }
-	if( (row ==       0 ) && (column == (columns-1)) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 2; }
-	if( (row == (rows-1)) && (column ==          0 ) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 3; }
-	if( (row == (rows-1)) && (column == (columns-1)) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 4; }
+  if( (row ==       0 ) && (column ==          0 ) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 1; }
+  if( (row ==       0 ) && (column == (columns-1)) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 2; }
+  if( (row == (rows-1)) && (column ==          0 ) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 3; }
+  if( (row == (rows-1)) && (column == (columns-1)) ) { assert(getPieceType(index) == CORNER_PIECE); return result + 4; }
 
-	if (row    ==             0) { assert(getPieceType(index) == BORDER_PIECE ); return result + column; }
-	if (column ==             0) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns - 2 + row; }
-	if (column == (columns - 1)) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns + rows - 4 + row; }
-	if (row    ==    (rows - 1)) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns + 2 * rows - 6 + column; }
+  if (row    ==             0) { assert(getPieceType(index) == BORDER_PIECE ); return result + column; }
+  if (column ==             0) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns - 2 + row; }
+  if (column == (columns - 1)) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns + rows - 4 + row; }
+  if (row    ==    (rows - 1)) { assert(getPieceType(index) == BORDER_PIECE ); return result + columns + 2 * rows - 6 + column; }
 
-	assert(getPieceType(index) == CENTER_PIECE );
-        return result + column + (row - 1)*(columns - 2);
+  assert (getPieceType(index) == CENTER_PIECE);
+  return result + column + (row - 1)*(columns - 2);
 }
 
 void printNegative( int index )
 {
-	int a, b, c, d;
 	int i, j, k, rotation, start = var_map[ index ], color[ 4 ];
 	int size, type  = getPieceType( index );
 
@@ -553,6 +156,7 @@ void printNegative( int index )
 	    {	printf("-%i %i 0\n", start + i + 1, corner_diamond[ i ][ 0 ] + color[ 0 ] );
 		printf("-%i %i 0\n", start + i + 1, corner_diamond[ i ][ 1 ] + color[ 1 ] ); }
 	}
+
 	if( type == BORDER_PIECE )
 	{
 	    size = 2*rows + 2*columns - 8;
@@ -627,7 +231,10 @@ void printNegative( int index )
 		}
 	    }
 
-	    a = color[ 0 ]; b = color[ 1 ]; c = color[ 2 ]; d = color[ 3 ];
+	    int a = color[ 0 ];
+            int b = color[ 1 ];
+            int c = color[ 2 ];
+            int d = color[ 3 ];
 
 	    if( piececolors == 2 )
 	    {
@@ -694,21 +301,19 @@ void printNegative( int index )
 			{
 		            printf("-%i %i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + a, center_diamond[ i ][ (j + 1) % 4 ] + a );
-#ifndef POSONLY
 		            printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + b, center_diamond[ i ][ (j + 2) % 4 ] + d );
 		            printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + d, center_diamond[ i ][ (j + 2) % 4 ] + b );
-#endif
 			}
 		    }
 		    return;
 		}
 		else 		// Type 5	AABC
 		{
-		    if( b == c ) { c = d; d = a; a = b; }
-		    if( c == d ) { c = a; a = d; d = b; b = a; }
-		    if( d == a ) { d = c; c = b; b = a;}
+		    if (b == c) { c = d; d = a; a = b; }
+		    if (c == d) { c = a; a = d; d = b; b = a; }
+		    if (d == a) { d = c; c = b; b = a; }
 
 	    	    for( i = 0; i < size; i++ )
 		    {
@@ -726,10 +331,8 @@ void printNegative( int index )
 				center_diamond[ i ][ j ] + d, center_diamond[ i ][ (j + 3) % 4 ] + c );
 		            printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + c, center_diamond[ i ][ (j + 1) % 4 ] + d );
-#ifndef POSONLY
 		            printf("-%i -%i -%i %i 0\n", start + i + 1, center_diamond[ i ][ j ] + a,
 				center_diamond[ i ][ (j + 1) % 4 ] + a, center_diamond[ i ][ (j + 2) % 4 ] + c );
-#endif
 			}
 		    }
 		    return;
@@ -754,12 +357,10 @@ void printNegative( int index )
 				center_diamond[ i ][ j ] + a, center_diamond[ i ][ (j+1)%4 ] + b );
 		     	printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + b, center_diamond[ i ][ (j+1)%4 ] + c );
-#ifndef POSONLY
 		     	printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + c, center_diamond[ i ][ (j+1)%4 ] + d );
 		     	printf("-%i -%i %i 0\n", start + i + 1,
 				center_diamond[ i ][ j ] + d, center_diamond[ i ][ (j+1)%4 ] + a );
-#endif
 		     }
 		}
 		return;
@@ -767,8 +368,7 @@ void printNegative( int index )
 	}
 }
 
-void atLeastOnePiece( int index )
-{
+void atLeastOnePiece (int index) {
 	int start = var_map[ index ];
 	int size, type  = getPieceType( index );
 	int row, column;
@@ -778,7 +378,9 @@ void atLeastOnePiece( int index )
 	if( type == BORDER_PIECE ) size = 2*rows + 2*columns - 8;
 	if( type == CENTER_PIECE ) size = (rows-2) * (columns-2);
 
-	for(int i = 1; i <= size; i++ ){  printf("%i ", start + i ); list[ i - 1 ] = start + i; }
+	for (int i = 1; i <= size; i++) {
+          printf("%i ", start + i );
+          list[ i - 1 ] = start + i; }
 	printf("0\n");
 
 #ifdef ATMOSTONE
@@ -845,7 +447,7 @@ void printPositive( )
 	for( i = 1; i < rows - 1; i++ )
 	   for( j = 1; j < columns - 1; j++ ) atLeastOneCell( i, j, center, nrofcenters );
 
-	vars_offset = nrofvars;
+	vars_offset = nVar;
 
 	for( i = 1; i <= nrofpieces; i++ ) atLeastOnePiece( i );  // with mapping
 
@@ -885,9 +487,7 @@ void printPositive( )
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 1 ] = dia_map[ _tmp +           1 ];
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 2 ] = dia_map[ _tmp + columns     ];
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 3 ] = dia_map[ _tmp               ]; }
-#ifdef MAPPING
 	for( i = 1; i <= nrofpieces; i++ ) printNegative( i );
-#endif
 }
 
 int computeClauses( int size )
@@ -1016,33 +616,23 @@ void printDuplicates( )
 #endif
 }
 
-void printConnections( )
-{
-	int index, rotation;
+void printConnections( ) {
+//	int index, rotation;
 
 	int a = (rows-2) * (columns -2);
 	int b = 2*rows + 2 * columns -8;
 	int c = 2*nrofbordercolors*(rows+columns-2);
 	int d = nrofcentercolors * (2*(rows-1)*(columns-1) - rows - columns + 2);
 
-	nrofvars = 16 + a*a + b*b + c + d;
+	nVar = 16 + a*a + b*b + c + d;
 
-	nrofclauses = 10 * nrofvars;
+	nCls = 10 * nVar;
 
-	printf("p cnf %i %i\n", nrofvars, nrofclauses );
+	printf("p cnf %i %i\n", nVar, nCls );
 
 	printPositive();
 
 	printDuplicates();
-#ifdef NOTWO
-	blockTwoPattern();
-#endif
-#ifdef NOTHREE
-	blockThreePattern();
-#endif
-#ifdef NOFOUR
-	blockFourPattern();
-#endif
 }
 
 unsigned int map( int color, int center_flag )
@@ -1175,30 +765,28 @@ void printHints( )
 
 int main( int argc , char ** argv ) {
 
-	nrofvars     = 0;
-	nrofdummies  = 0;
-	nrofclauses  = 0;
-	nrofcolors   = 0;
-	nrofbordercolors   = 0;
-	nrofcentercolors   = 0;
+  nVar  = 0;
+  nDum  = 0;
+  nCls  = 0;
+  nrofcolors   = 0;
+  nrofbordercolors   = 0;
+  nrofcentercolors   = 0;
 
-	for (int i = 0; i < 30; i++) color_map[ i ] = 0;
+  for (int i = 0; i < 30; i++) color_map[ i ] = 0;
 
-	if( argc > 1 ) {
-	   parse( argv[ 1 ] );
-	   if( argc > 2 ) shuffle( atoi(argv[2]) );
-	}
-	else {
-	  printf("No input file given\n");
-	  return 0;
-	}
+  if( argc > 1 ) {
+    parse( argv[ 1 ] );
+    if( argc > 2 ) shuffle( atoi(argv[2]) );
+  }
+  else {
+    printf("No input file given\n");
+    return 0;
+  }
 
-//	nrofbordercolors = nrofcolors - nrofcentercolors;
+  turnCorners();
 
-	turnCorners();
+  printConnections();
 
-	printConnections();
-
-	printHints();
+  printHints();
   return 1;
 }
