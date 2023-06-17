@@ -6,7 +6,6 @@
 //#define BLOCKED
 //#define ATMOSTONE			// turn on for explicit one-on-one mapping
 //#define FBCOLORS			// turn on for forbidden color clauses
-#define LIMITED
 #define HINTS
 //#define PATTERN			// to deal with duplicates
 
@@ -21,8 +20,8 @@
 
 unsigned int color_map[ 30 ];
 
-unsigned int rows    = ROWS;
-unsigned int columns = COLUMNS;
+unsigned int rows    = ROWS;		// fixed later in parser
+unsigned int columns = COLUMNS;		// fixed later in parser
 
 unsigned int nrofcolors;
 unsigned int nrofbordercolors, nrofcentercolors;
@@ -96,29 +95,40 @@ void printAtMostOne (int *list, int size) {
 	while (i < size);
 }
 
-void printDiamonds () {
-  int offset = dia_map[ 0 ], list[ 257 ];
+void initDiamonds () {
+  int nrofcorners = 4;
+  int nrofborders = 2*rows + 2*columns - 8;
+  int nrofcenters = (rows-2) * (columns - 2);
+  dia_map[ 0 ] = nrofcorners * nrofcorners + nrofborders * nrofborders + nrofcenters * nrofcenters;
+
+  int offset = dia_map[ 0 ];
 
   for(int i = 1; i <= nrofdiamonds; i++ ) {
     dia_map[ i ] = offset;
-    if (getDiamondType( i ) ) {
-      for(int j = 1; j <= nrofbordercolors; j++ ) {
-        printf("%i ", offset + j );
-        list[ j - 1 ] = offset + j; }
-      printf("0\n");
+    int size = nrofcentercolors;
+    if (getDiamondType( i ))
+      size = nrofbordercolors;
+    offset += size; }
+}
 
-      printAtMostOne( list, nrofbordercolors );
+void printDiamonds () {
+  for (int i = 1; i <= nrofdiamonds; i++ ) {
+    int size = nrofcentercolors;
+    if (getDiamondType( i ))
+      size = nrofbordercolors;
+    for (int j = 1; j <= size; j++ )
+      printf("%i ", dia_map[i] + j);
+    printf ("0\n"); }
 
-      offset += nrofbordercolors; }
-    else {
-      for (int j = 1; j <= nrofcentercolors; j++ ) {
-        printf("%i ", offset + j );
-        list[ j - 1] = offset+ j; }
-      printf("0\n");
+  int list[257];
 
-      printAtMostOne( list, nrofcentercolors );
-
-      offset += nrofcentercolors; } }
+  for (int i = 1; i <= nrofdiamonds; i++ ) {
+    int size = nrofcentercolors;
+    if (getDiamondType( i ))
+      size = nrofbordercolors;
+    for (int j = 1; j <= size; j++ )
+      list[j-1] = dia_map[i] + j;
+    printAtMostOne (list, size); }
 }
 
 int getVariable( int index, int row, int column ) {
@@ -221,8 +231,7 @@ void printNegative( int index )
 #ifdef FBCOLORS
 		    for( k = 0; k < fbcolors; k++ )
 		        printf("-%i -%i 0\n", start + i + 1, center_diamond[ i ][ j ] + fbcolor[ k ] );
-#endif
-#ifdef LIMITED
+#else               // support encoding
 		    printf("-%i ", start + i + 1);
 		    for( k = 0; k < lcolors; k++ )
 		        printf("%i ", center_diamond[ i ][ j ] + lcolor[ k ] );
@@ -369,40 +378,39 @@ void printNegative( int index )
 }
 
 void atLeastOnePiece (int index) {
-	int start = var_map[ index ];
-	int size, type  = getPieceType( index );
-	int row, column;
-	int list[ 257 ];
+  int start = var_map[ index ];
+  int size, type  = getPieceType( index );
+  int row, column;
+  int list[ 257 ];
 
-	if( type == CORNER_PIECE ) size = 4;
-	if( type == BORDER_PIECE ) size = 2*rows + 2*columns - 8;
-	if( type == CENTER_PIECE ) size = (rows-2) * (columns-2);
+  if (type == CORNER_PIECE) size = 4;
+  if (type == BORDER_PIECE) size = 2*rows + 2*columns - 8;
+  if (type == CENTER_PIECE) size = (rows-2) * (columns-2);
 
-	for (int i = 1; i <= size; i++) {
-          printf("%i ", start + i );
-          list[ i - 1 ] = start + i; }
-	printf("0\n");
+  for (int i = 1; i <= size; i++) {
+    printf("%i ", start + i );
+    list[ i - 1 ] = start + i; }
+  printf("0\n");
 
 #ifdef ATMOSTONE
-	printAtMostOne( list, size );
+  printAtMostOne (list, size);
 #endif
-	// printMapping
 
-	for(int i = 0; i < size; i++ )
-	{
-	    if( type == CORNER_PIECE )
-	    {  {if( (i % 2) == 0 ) column = 1; else column = columns; } { if( i < 2 ) row = 1; else row = rows; } }
-	    if( type == BORDER_PIECE )
-	    { if     ( i < (columns          - 2) ) { row =                      1; column = i + 2 ; }
-	      else if( i < (columns +   rows - 4) ) { row = i - columns        + 4; column = 1; }
-	      else if( i < (columns + 2*rows - 6) ) { row = i - columns - rows + 6; column = columns; }
-	      else                                  { row =               rows    ; column = columns + i - size; }
-	    }
-	    if( type == CENTER_PIECE )
-	    { column = 2 + (i % (columns-2) ); row = 2 + i / (columns - 2); }
+  // print mapping
+  for (int i = 0; i < size; i++) {
+    if( type == CORNER_PIECE )
+    {  {if( (i % 2) == 0 ) column = 1; else column = columns; } { if( i < 2 ) row = 1; else row = rows; } }
+    if( type == BORDER_PIECE )
+    { if     ( i < (columns          - 2) ) { row =                      1; column = i + 2 ; }
+      else if( i < (columns +   rows - 4) ) { row = i - columns        + 4; column = 1; }
+      else if( i < (columns + 2*rows - 6) ) { row = i - columns - rows + 6; column = columns; }
+      else                                  { row =               rows    ; column = columns + i - size; }
+    }
+    if( type == CENTER_PIECE )
+    { column = 2 + (i % (columns-2) ); row = 2 + i / (columns - 2); }
 
-	    printf("c %i [%i,%i] %i\n", start + i + 1, row, column, index );
-	}
+    printf("c %i [%i,%i] %i\n", start + i + 1, row, column, index );
+  }
 }
 
 void atLeastOneCell( int row, int column, int *list, int size ) {
@@ -411,83 +419,86 @@ void atLeastOneCell( int row, int column, int *list, int size ) {
   printf("0\n");
 }
 
+void initMap ( ) {
+  int map_index = 0;
+  int corner[ 4 ], nrofcorners = 0;
+  int border[ 2*rows + 2*columns - 8 ], nrofborders = 0;
+  int center[ (rows-2) * (columns-2) ], nrofcenters = 0;
+
+  for(int i = 1; i <= nrofpieces; i++ ) {
+    var_map[ i ] = map_index;
+
+    if (getPieceType( i ) == CORNER_PIECE) {
+      corner[ nrofcorners++ ] = i; map_index += 4; }
+    if (getPieceType( i ) == BORDER_PIECE) {
+      border[ nrofborders++ ] = i; map_index += (2*rows + 2* columns - 8); }
+    if (getPieceType( i ) == CENTER_PIECE) {
+      center[ nrofcenters++ ] = i; map_index += (rows-2) * (columns-2); }
+  }
+
+  assert (nrofcorners == 4);
+  assert (nrofborders == (2*rows + 2*columns - 8));
+  assert (nrofcenters == ((rows-2) * (columns -2)));
+
+  // each corner cell containts at least one piece
+  atLeastOneCell(        0,           0, corner, nrofcorners );
+  atLeastOneCell(        0, columns - 1, corner, nrofcorners );
+  atLeastOneCell( rows - 1,           0, corner, nrofcorners );
+  atLeastOneCell( rows - 1, columns - 1, corner, nrofcorners );
+
+  // each border cell containts at least one piece
+  for (int i = 1; i < columns - 1; i++) atLeastOneCell( 0       ,           i, border, nrofborders );
+  for (int i = 1; i <    rows - 1; i++) atLeastOneCell( i       ,           0, border, nrofborders );
+  for (int i = 1; i <    rows - 1; i++) atLeastOneCell( i       , columns - 1, border, nrofborders );
+  for (int i = 1; i < columns - 1; i++) atLeastOneCell( rows - 1,           i, border, nrofborders );
+
+  // each center cell containts at least one piece
+  for (int i = 1; i < rows - 1; i++)
+   for (int j = 1; j < columns - 1; j++) atLeastOneCell( i, j, center, nrofcenters );
+
+}
+
 void printPositive( )
 {
-	int i, j, map_index = 0;
-	int corner[ 4 ], nrofcorners = 0;
-	int border[ 2*rows + 2*columns - 8 ], nrofborders = 0;
-	int center[ (rows-2) * (columns-2) ], nrofcenters = 0;
-
-	for( i = 1; i <= nrofpieces; i++ )
-	{
-	    var_map[ i ] = map_index;
-
-	    if( getPieceType( i ) == CORNER_PIECE )
-	    {	corner[ nrofcorners++ ] = i; map_index += 4; }
-	    if( getPieceType( i ) == BORDER_PIECE )
-	    {	border[ nrofborders++ ] = i; map_index += (2*rows + 2* columns - 8); }
-	    if( getPieceType( i ) == CENTER_PIECE )
-	    {	center[ nrofcenters++ ] = i; map_index += (rows-2) * (columns-2); }
-	}
-
-	assert( nrofcorners == 4 );
-	assert( nrofborders == (2*rows + 2*columns - 8) );
-	assert( nrofcenters == ((rows-2) * (columns -2)) );
-
-	atLeastOneCell(        0,           0, corner, nrofcorners );
-	atLeastOneCell(        0, columns - 1, corner, nrofcorners );
-	atLeastOneCell( rows - 1,           0, corner, nrofcorners );
-	atLeastOneCell( rows - 1, columns - 1, corner, nrofcorners );
-
-	for( i = 1; i < columns - 1; i++ ) atLeastOneCell( 0       ,           i, border, nrofborders );
-	for( i = 1; i <    rows - 1; i++ ) atLeastOneCell( i       ,           0, border, nrofborders );
-	for( i = 1; i <    rows - 1; i++ ) atLeastOneCell( i       , columns - 1, border, nrofborders );
-	for( i = 1; i < columns - 1; i++ ) atLeastOneCell( rows - 1,           i, border, nrofborders );
-
-	for( i = 1; i < rows - 1; i++ )
-	   for( j = 1; j < columns - 1; j++ ) atLeastOneCell( i, j, center, nrofcenters );
 
 	vars_offset = nVar;
 
-	for( i = 1; i <= nrofpieces; i++ ) atLeastOnePiece( i );  // with mapping
+        // each piece is placed
+	for(int i = 1; i <= nrofpieces; i++ ) atLeastOnePiece( i );  // with mapping
 
-	dia_map[ 0 ] = nrofcorners * nrofcorners + nrofborders * nrofborders + nrofcenters * nrofcenters;
-
-	nrofdiamonds = 2 * columns * rows - columns - rows;
-
-	printDiamonds ();
-
+        // can this all be in printNegative without actually storing the piece?
 	corner_diamond[ 0 ][ 0 ] = dia_map[                        1 ]; corner_diamond[ 0 ][ 1 ] = dia_map[              columns   ];
 	corner_diamond[ 1 ][ 0 ] = dia_map[              2*columns-1 ]; corner_diamond[ 1 ][ 1 ] = dia_map[              columns-1 ];
 	corner_diamond[ 2 ][ 0 ] = dia_map[ nrofdiamonds-2*columns+2 ]; corner_diamond[ 2 ][ 1 ] = dia_map[ nrofdiamonds-columns+2 ];
 	corner_diamond[ 3 ][ 0 ] = dia_map[ nrofdiamonds             ]; corner_diamond[ 3 ][ 1 ] = dia_map[ nrofdiamonds-columns+1 ];
 
-	for( i = 1; i < columns - 1; i++ )
+	for(int i = 1; i < columns - 1; i++ )
 	{   border_diamond[ i - 1 ][ 0 ] = dia_map[       1 + i ];
 	    border_diamond[ i - 1 ][ 1 ] = dia_map[ columns + i ];
 	    border_diamond[ i - 1 ][ 2 ] = dia_map[           i ]; }
-	for( i = 1; i <    rows - 1; i++ )
+	for(int i = 1; i <    rows - 1; i++ )
 	{   border_diamond[ columns - 3 + i ][ 0 ] = dia_map[ columns + (i-1)*(2*columns-1) ];
 	    border_diamond[ columns - 3 + i ][ 1 ] = dia_map[       1 +   i  *(2*columns-1) ];
 	    border_diamond[ columns - 3 + i ][ 2 ] = dia_map[ columns +   i  *(2*columns-1) ]; }
-	for( i = 1; i <    rows - 1; i++ )
+	for(int i = 1; i <    rows - 1; i++ )
 	{   border_diamond[ columns + rows - 5 + i ][ 0 ] = dia_map[           (i+1)*(2*columns-1) ];
 	    border_diamond[ columns + rows - 5 + i ][ 1 ] = dia_map[ columns-1 + i  *(2*columns-1) ];
 	    border_diamond[ columns + rows - 5 + i ][ 2 ] = dia_map[             i  *(2*columns-1) ]; }
-	for( i = 1; i < columns - 1; i++ )
+	for(int i = 1; i < columns - 1; i++ )
 	{   border_diamond[ columns + 2*rows - 7 + i ][ 0 ] = dia_map[ nrofdiamonds -   columns + i + 1 ];
 	    border_diamond[ columns + 2*rows - 7 + i ][ 1 ] = dia_map[ nrofdiamonds - 2*columns + i + 2 ];
 	    border_diamond[ columns + 2*rows - 7 + i ][ 2 ] = dia_map[ nrofdiamonds -   columns + i + 2 ]; }
 
-	for( i = 1; i < rows - 1; i++ )
-	   for( j = 1; j < columns - 1; j++ )
+	for(int i = 1; i < rows - 1; i++ )
+	   for(int j = 1; j < columns - 1; j++ )
 	   {
 		int _tmp = i * (2*columns-1) + j;
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 0 ] = dia_map[ _tmp - columns + 1 ];
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 1 ] = dia_map[ _tmp +           1 ];
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 2 ] = dia_map[ _tmp + columns     ];
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 3 ] = dia_map[ _tmp               ]; }
-	for( i = 1; i <= nrofpieces; i++ ) printNegative( i );
+
+	for(int i = 1; i <= nrofpieces; i++ ) printNegative( i );
 }
 
 int computeClauses( int size )
@@ -616,7 +627,7 @@ void printDuplicates( )
 #endif
 }
 
-void printConnections( ) {
+void printHeader () {
   int a = (rows-2) * (columns -2);
   int b = 2*rows + 2 * columns -8;
   int c = 2*nrofbordercolors*(rows+columns-2);
@@ -627,51 +638,43 @@ void printConnections( ) {
   nCls = 10 * nVar;
 
   printf ("p cnf %i %i\n", nVar, nCls);
-
-  printPositive ();
-
-  printDuplicates ();
 }
 
-unsigned int map( int color, int center_flag )
-{
-	if( color == 0 ) return 0;
+unsigned int map (int color, int center_flag) {
+  if( color == 0 ) return 0;
 
-	if( color_map[ color ] ) return color_map[ color ];
+  if( color_map[ color ] ) return color_map[ color ];
 
-	if( center_flag ) color_map[ color ] = ++nrofcentercolors;
-	else              color_map[ color ] = ++nrofbordercolors;
+  if( center_flag ) color_map[ color ] = ++nrofcentercolors;
+  else              color_map[ color ] = ++nrofbordercolors;
 
-	return color_map[ color ];
+  return color_map[ color ];
 }
 
 void initPiece( int index, int north, int east, int south, int west ) {
-
-  piece[ index ][ 0 ] = map( north, east  * west  );
-  piece[ index ][ 1 ] = map( east,  north * south ) ;
-  piece[ index ][ 2 ] = map( south, east  * west  );
-  piece[ index ][ 3 ] = map( west,  north * south );
-
-//	for(int rotation = 0; rotation < 4; rotation++ )
-//	    if( piece[ index ][ rotation ] > nrofcolors ) nrofcolors = piece[ index ][ rotation ];
-
-//	if( north && east && south && west )
-//	    for(int rotation = 0; rotation < 4; rotation++ )
-//	        if( piece[ index ][ rotation ] > nrofcentercolors ) nrofcentercolors = piece[ index ][ rotation ];
+  piece[ index ][ 0 ] = map (north, east  * west );
+  piece[ index ][ 1 ] = map (east,  north * south);
+  piece[ index ][ 2 ] = map (south, east  * west );
+  piece[ index ][ 3 ] = map (west,  north * south);
 }
 
-void turnCorners( )
-{
-	for (int index = 1; index <= nrofpieces; index++)
-	    if( getPieceType( index ) == CORNER_PIECE )
-	    {
-		if( (piece[ index ][ 0 ] == 0) && (piece[ index ][ 1 ] == 0) )
-		{ piece[ index ][ 1 ] = piece[ index ][ 2 ]; piece[ index ][ 2 ] = piece[ index ][ 3 ]; piece[index ][ 3 ] = 0;}
-		if( (piece[ index ][ 1 ] == 0) && (piece[ index ][ 2 ] == 0) )
-		{ piece[ index ][ 1 ] = piece[ index ][ 3 ]; piece[ index ][ 2 ] = piece[ index ][ 0 ]; piece[index ][ 3 ] = 0; piece[ index ][ 0 ] = 0;}
-		if( (piece[ index ][ 2 ] == 0) && (piece[ index ][ 3 ] == 0) )
-		{ piece[ index ][ 2 ] = piece[ index ][ 1 ]; piece[ index ][ 1 ] = piece[ index ][ 0 ]; piece[index ][ 0 ] = 0;}
-	    }
+// for corener pieces make [1] and [2] the non-zero colors
+void turnCorners () {
+  for (int index = 1; index <= nrofpieces; index++)
+    if( getPieceType( index ) == CORNER_PIECE ) {
+      if ((piece[ index ][ 0 ] == 0) && (piece[ index ][ 1 ] == 0) ) {
+        piece[ index ][ 1 ] = piece[ index ][ 2 ];
+        piece[ index ][ 2 ] = piece[ index ][ 3 ];
+        piece[index ][ 3 ] = 0; }
+      if ((piece[ index ][ 1 ] == 0) && (piece[ index ][ 2 ] == 0)) {
+        piece[ index ][ 1 ] = piece[ index ][ 3 ];
+        piece[ index ][ 2 ] = piece[ index ][ 0 ];
+        piece[ index ][ 3 ] = 0;
+        piece[ index ][ 0 ] = 0; }
+      if ((piece[ index ][ 2 ] == 0) && (piece[ index ][ 3 ] == 0)) {
+        piece[ index ][ 2 ] = piece[ index ][ 1 ];
+        piece[ index ][ 1 ] = piece[ index ][ 0 ];
+        piece[index ][ 0 ] = 0; } }
 }
 
 void parse( char * filename  )
@@ -705,64 +708,57 @@ void parse( char * filename  )
 	for (int _rows = 3; _rows <= 16; _rows++ )
 	{
 	   int _columns = (nrofborders / 2) - _rows + 4;
-	   if( (_rows * _columns) == nrofpieces ) {rows = _rows; columns = _columns; break; }
+	   if( (_rows * _columns) == nrofpieces ) { rows = _rows; columns = _columns; break; }
 	}
 
 	assert( (rows * columns) == nrofpieces );
 }
 
-void shuffle( int seed )
-{
+void shuffle (int seed) {
 
-	srand( seed );
+  srand (seed);
 
-	// DO NOT SHUFFLE HINT PIECES!!!
+  // DO NOT SHUFFLE HINT PIECES!!!
 
-	for(int i = 1; i <= nrofpieces; i++ )
-	{
-	   for(int j = 0; j < nrofhints; j++ ) if( hint[ j ][ 2 ] == i ) goto next_piece;
+  for (int i = 1; i <= nrofpieces; i++) {
+    int flag = 0;
+    for (int j = 0; j < nrofhints; j++ ) if( hint[ j ][ 2 ] == i ) flag = 1;
+    if (flag) continue;
 
-   	   int tmp;
-	   int rot = rand() % 4;
+    int rot = rand() % 4;
 
-	   if( rot == 1 ) { tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 1 ];
-	     piece[ i ][ 1 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = piece[ i ][ 3 ]; piece[ i ][ 3 ] = tmp; }
+    if( rot == 1 ) { int tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 1 ];
+      piece[ i ][ 1 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = piece[ i ][ 3 ]; piece[ i ][ 3 ] = tmp; }
 
-	   if( rot == 2 ) { tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = tmp;
-	     tmp = piece[ i ][ 1 ]; piece[ i ][ 1 ] = piece[ i ][ 3 ]; piece[ i ][ 3 ] = tmp; }
+    if( rot == 2 ) { int tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = tmp;
+      tmp = piece[ i ][ 1 ]; piece[ i ][ 1 ] = piece[ i ][ 3 ]; piece[ i ][ 3 ] = tmp; }
 
-	   if( rot == 1 ) { tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 3 ];
-	     piece[ i ][ 3 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = piece[ i ][ 1 ]; piece[ i ][ 1 ] = tmp; }
-
-	    next_piece:;
-	}
+    if( rot == 1 ) { int tmp = piece[ i ][ 0 ]; piece[ i ][ 0 ] = piece[ i ][ 3 ];
+      piece[ i ][ 3 ] = piece[ i ][ 2 ]; piece[ i ][ 2 ] = piece[ i ][ 1 ]; piece[ i ][ 1 ] = tmp; }
+  }
 }
 
-void printHints( )
-{
+void printHints () {
 #ifdef HINTS
-	printf("c file contains %i hints\n", nrofhints );
+  printf("c file contains %i hints\n", nrofhints );
 #endif
-	for (int i = 0; i < nrofhints; i++ )
-	{
-	     int var  = getVariable ( hint[ i ][ 2 ], hint[ i ][ 0 ] - 1, hint[ i ][ 1 ] - 1 );
-	     int type = getPieceType( hint[ i ][ 2 ] );
+  for (int i = 0; i < nrofhints; i++) {
+     int var  = getVariable ( hint[ i ][ 2 ], hint[ i ][ 0 ] - 1, hint[ i ][ 1 ] - 1 );
+     int type = getPieceType( hint[ i ][ 2 ] );
 
-	     printf("%i 0\n", var );
+     printf("%i 0\n", var );
 
-	     if( type == CENTER_PIECE )
-	     {
-		int index = var - 1 - var_map[ hint[ i ][ 2 ] ];
+     if (type == CENTER_PIECE) {
+       int index = var - 1 - var_map[ hint[ i ][ 2 ] ];
 
-		for(int j = 0 ; j < 4; j++ )
-		    printf("%i 0\n", center_diamond[ index ][ j ] + piece[ hint[ i ][ 2 ] ][ (j + 4 - hint[ i ][ 3 ]) % 4 ] );
-//		    printf("%i 0\n", center_diamond[ index ][ j ] + piece[ hint[ i ][ 2 ] ][ (j + hint[ i ][ 3 ]) % 4 ] );
-	     }
-	}
+	for(int j = 0 ; j < 4; j++ )
+	    printf("%i 0\n", center_diamond[ index ][ j ] + piece[ hint[ i ][ 2 ] ][ (j + 4 - hint[ i ][ 3 ]) % 4 ] );
+//	    printf("%i 0\n", center_diamond[ index ][ j ] + piece[ hint[ i ][ 2 ] ][ (j + hint[ i ][ 3 ]) % 4 ] );
+     }
+  }
 }
 
 int main( int argc , char ** argv ) {
-
   nVar  = 0;
   nDum  = 0;
   nCls  = 0;
@@ -772,18 +768,29 @@ int main( int argc , char ** argv ) {
 
   for (int i = 0; i < 30; i++) color_map[ i ] = 0;
 
-  if( argc > 1 ) {
-    parse( argv[ 1 ] );
-    if( argc > 2 ) shuffle( atoi(argv[2]) );
+  if (argc > 1) {
+    parse (argv[ 1 ]); // fixes rows and columns
+    if (argc > 2)
+      shuffle (atoi(argv[2]));
   }
   else {
     printf("No input file given\n");
     return 0;
   }
 
+  printHeader ();
+
   turnCorners();
 
-  printConnections();
+  nrofdiamonds = 2 * columns * rows - columns - rows;
+
+  initDiamonds ();
+  initMap ();
+  printDiamonds ();
+
+  printPositive ();
+
+  printDuplicates ();
 
   printHints();
   return 1;
