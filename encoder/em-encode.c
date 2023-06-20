@@ -4,6 +4,8 @@
 #include <assert.h>
 
 //#define BLOCKED
+//#define PAIRWISE
+//#define LINEAR
 //#define ATMOSTONE			// turn on for explicit one-on-one mapping
 //#define FBCOLORS			// turn on for forbidden color clauses
 #define HINTS
@@ -61,6 +63,50 @@ int getDiamondType (int index) {
 
   return 0; }
 
+
+int atmostone (int* array, int size, int aux) {
+#ifdef PAIRWISE
+  for (int i = 0; i < size; i++)
+    for (int j = i+1; j < size; j++)
+      printf ("%i %i 0\n", -array[i], -array[j]);
+
+  return aux;
+#else
+  if (size > 1) {
+    printf ("%i %i 0\n", -array[0], -array[1]); }
+
+  if (size > 2) {
+    printf ("%i %i 0\n", -array[0], -array[2]);
+    printf ("%i %i 0\n", -array[1], -array[2]); }
+
+  if (size <= 3) return aux;
+
+  if (size == 4) {
+    printf ("%i %i 0\n", -array[0], -array[3]);
+    printf ("%i %i 0\n", -array[1], -array[3]);
+    printf ("%i %i 0\n", -array[2], -array[3]);
+    return aux; }
+
+  printf ("%i %i 0\n", aux, -array[0]);
+  printf ("%i %i 0\n", aux, -array[1]);
+  printf ("%i %i 0\n", aux, -array[2]);
+
+#ifdef LINEAR
+  array[0] = -aux;
+  for (int i = 1; i < size - 2; i++)
+    array[i] = array[i+2];
+#else
+  for (int i = 0; i < size - 3; i++)
+    array[i] = array[i+3];
+  array[size-3] = -aux;
+#endif
+
+  aux++;
+
+  return atmostone (array, size - 2, aux);
+#endif
+}
+
 void printAtMostOne (int *list, int size) {
 #ifdef BLOCKED
 	if( size <= 5 )
@@ -111,7 +157,7 @@ void initDiamonds () {
     offset += size; }
 }
 
-void printDiamonds () {
+int printDiamonds (int aux) {
   for (int i = 1; i <= nrofdiamonds; i++ ) {
     int size = nrofcentercolors;
     if (getDiamondType( i ))
@@ -128,7 +174,9 @@ void printDiamonds () {
       size = nrofbordercolors;
     for (int j = 1; j <= size; j++ )
       list[j-1] = dia_map[i] + j;
-    printAtMostOne (list, size); }
+    aux = atmostone (list, size, aux); }
+
+  return aux;
 }
 
 int getVariable( int index, int row, int column ) {
@@ -377,7 +425,7 @@ void printNegative( int index )
 	}
 }
 
-void atLeastOnePiece (int index) {
+int atLeastOnePiece (int index, int aux) {
   int start = var_map[ index ];
   int size, type  = getPieceType( index );
   int row, column;
@@ -393,7 +441,7 @@ void atLeastOnePiece (int index) {
   printf("0\n");
 
 #ifdef ATMOSTONE
-  printAtMostOne (list, size);
+  aux = atmostone (list, size, aux);
 #endif
 
   // print mapping
@@ -411,6 +459,8 @@ void atLeastOnePiece (int index) {
 
     printf("c %i [%i,%i] %i\n", start + i + 1, row, column, index );
   }
+
+  return aux;
 }
 
 void atLeastOneCell( int row, int column, int *list, int size ) {
@@ -458,13 +508,13 @@ void initMap ( ) {
 
 }
 
-void printPositive( )
+int printPositive (int aux)
 {
 
 	vars_offset = nVar;
 
         // each piece is placed
-	for(int i = 1; i <= nrofpieces; i++ ) atLeastOnePiece( i );  // with mapping
+	for(int i = 1; i <= nrofpieces; i++ ) aux = atLeastOnePiece (i, aux);  // with mapping
 
         // can this all be in printNegative without actually storing the piece?
 	corner_diamond[ 0 ][ 0 ] = dia_map[                        1 ]; corner_diamond[ 0 ][ 1 ] = dia_map[              columns   ];
@@ -499,6 +549,7 @@ void printPositive( )
 		center_diamond[ j - 1 + (i-1)*(columns-2) ][ 3 ] = dia_map[ _tmp               ]; }
 
 	for(int i = 1; i <= nrofpieces; i++ ) printNegative( i );
+  return aux;
 }
 
 int computeClauses( int size )
@@ -784,11 +835,12 @@ int main( int argc , char ** argv ) {
 
   nrofdiamonds = 2 * columns * rows - columns - rows;
 
+  int aux = nVar + 1;
+
   initDiamonds ();
   initMap ();
-  printDiamonds ();
-
-  printPositive ();
+  aux = printDiamonds (aux);
+  aux = printPositive (aux);
 
   printDuplicates ();
 
