@@ -1,4 +1,4 @@
-all: em-encode-plain em-encode-amo em-encode-fbc em-encode-all em-encode-aux em-encode-amo-aux em-encode-fbc-aux em-encode-all-aux
+all: em-encode-plain em-encode-amo em-encode-fbc em-encode-all em-encode-aux em-encode-amo-aux em-encode-fbc-aux em-encode-all-aux em-encode-knf em-encode-amo-knf em-encode-fbc-knf em-encode-all-knf
 
 em-encode-plain: em-encode.c
 	gcc em-encode.c -std=c99 -O2 -DPAIRWISE -o em-encode-plain
@@ -24,5 +24,17 @@ em-encode-fbc-aux: em-encode.c
 em-encode-all-aux: em-encode.c
 	gcc em-encode.c -std=c99 -O2 -DATMOSTONE -DFBCOLORS -o em-encode-all-aux
 
+em-encode-knf: em-encode.c
+	gcc em-encode.c -std=c99 -O2 -DKNF -o em-encode-knf
+
+em-encode-amo-knf: em-encode.c
+	gcc em-encode.c -std=c99 -O2 -DKNF -DATMOSTONE -o em-encode-amo-knf
+
+em-encode-fbc-knf: em-encode.c
+	gcc em-encode.c -std=c99 -O2 -DKNF -DFBCOLORS -o em-encode-fbc-knf
+
+em-encode-all-knf: em-encode.c
+	gcc em-encode.c -std=c99 -O2 -DKNF -DATMOSTONE -DFBCOLORS -o em-encode-all-knf
+
 clean:
-	rm em-encode-plain em-encode-amo em-encode-fbc em-encode-all em-encode-aux em-encode-amo-aux em-encode-fbc-aux em-encode-all-aux
+	rm em-encode-plain em-encode-amo em-encode-fbc em-encode-all em-encode-aux em-encode-amo-aux em-encode-fbc-aux em-encode-all-aux em-encode-knf em-encode-amo-knf em-encode-fbc-knf em-encode-all-knf

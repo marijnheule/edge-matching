@@ -4,11 +4,14 @@
 #include <assert.h>
 
 //#define BLOCKED
+//#define KNF
 //#define PAIRWISE
 //#define LINEAR
 //#define ATMOSTONE			// turn on for explicit one-on-one mapping
 //#define FBCOLORS			// turn on for forbidden color clauses
-#define HINTS
+
+//#define MAPPING
+//#define HINTS
 //#define PATTERN			// to deal with duplicates
 
 #define CENTER_PIECE	0
@@ -65,31 +68,40 @@ int getDiamondType (int index) {
 
 
 int atmostone (int* array, int size, int aux) {
+#ifdef KNF
+  printf ("k %i ", size - 1);
+  for (int i = 0; i < size; i++)
+    printf ("%i ", array[i]);
+  printf ("0\n");
+
+  return aux;
+#endif
 #ifdef PAIRWISE
   for (int i = 0; i < size; i++)
     for (int j = i+1; j < size; j++)
-      printf ("%i %i 0\n", -array[i], -array[j]);
+      printf ("%i %i 0\n", array[i], array[j]);
 
   return aux;
-#else
+#endif
+
   if (size > 1) {
-    printf ("%i %i 0\n", -array[0], -array[1]); }
+    printf ("%i %i 0\n", array[0], array[1]); }
 
   if (size > 2) {
-    printf ("%i %i 0\n", -array[0], -array[2]);
-    printf ("%i %i 0\n", -array[1], -array[2]); }
+    printf ("%i %i 0\n", array[0], array[2]);
+    printf ("%i %i 0\n", array[1], array[2]); }
 
   if (size <= 3) return aux;
 
   if (size == 4) {
-    printf ("%i %i 0\n", -array[0], -array[3]);
-    printf ("%i %i 0\n", -array[1], -array[3]);
-    printf ("%i %i 0\n", -array[2], -array[3]);
+    printf ("%i %i 0\n", array[0], array[3]);
+    printf ("%i %i 0\n", array[1], array[3]);
+    printf ("%i %i 0\n", array[2], array[3]);
     return aux; }
 
-  printf ("%i %i 0\n", aux, -array[0]);
-  printf ("%i %i 0\n", aux, -array[1]);
-  printf ("%i %i 0\n", aux, -array[2]);
+  printf ("%i %i 0\n", aux, array[0]);
+  printf ("%i %i 0\n", aux, array[1]);
+  printf ("%i %i 0\n", aux, array[2]);
 
 #ifdef LINEAR
   array[0] = -aux;
@@ -104,7 +116,6 @@ int atmostone (int* array, int size, int aux) {
   aux++;
 
   return atmostone (array, size - 2, aux);
-#endif
 }
 
 void printAtMostOne (int *list, int size) {
@@ -173,7 +184,7 @@ int printDiamonds (int aux) {
     if (getDiamondType( i ))
       size = nrofbordercolors;
     for (int j = 1; j <= size; j++ )
-      list[j-1] = dia_map[i] + j;
+      list[j-1] = -dia_map[i] - j;
     aux = atmostone (list, size, aux); }
 
   return aux;
@@ -437,13 +448,14 @@ int atLeastOnePiece (int index, int aux) {
 
   for (int i = 1; i <= size; i++) {
     printf("%i ", start + i );
-    list[ i - 1 ] = start + i; }
+    list[ i - 1 ] = -start - i; }
   printf("0\n");
 
 #ifdef ATMOSTONE
   aux = atmostone (list, size, aux);
 #endif
 
+#ifdef MAPPING
   // print mapping
   for (int i = 0; i < size; i++) {
     if( type == CORNER_PIECE )
@@ -459,7 +471,7 @@ int atLeastOnePiece (int index, int aux) {
 
     printf("c %i [%i,%i] %i\n", start + i + 1, row, column, index );
   }
-
+#endif
   return aux;
 }
 
@@ -504,7 +516,7 @@ void initMap ( ) {
 
   // each center cell containts at least one piece
   for (int i = 1; i < rows - 1; i++)
-   for (int j = 1; j < columns - 1; j++) atLeastOneCell( i, j, center, nrofcenters );
+    for (int j = 1; j < columns - 1; j++) atLeastOneCell( i, j, center, nrofcenters );
 
 }
 
@@ -688,7 +700,11 @@ void printHeader () {
 
   nCls = 10 * nVar;
 
+#ifdef KNF
+  printf ("p knf %i %i\n", nVar, nCls);
+#else
   printf ("p cnf %i %i\n", nVar, nCls);
+#endif
 }
 
 unsigned int map (int color, int center_flag) {
@@ -736,12 +752,12 @@ void parse( char * filename  )
 	file = fopen( filename , "r");
 
 	nrofpieces = 0;
-#ifdef HINTS
+//#ifdef HINTS
 	fscanf( file, "%i\n", &nrofhints );
 
 	for(int i = 0; i < nrofhints; i++ )
 	    fscanf( file, "%i %i %i %i\n", &hint[ i ][ 0 ], & hint[ i ][ 1 ], &hint[ i ][ 2 ], &hint[ i ][ 3 ] );
-#endif
+//#endif
 	if( file )
 	   while( !feof(file) )
 	   {
@@ -843,7 +859,8 @@ int main( int argc , char ** argv ) {
   aux = printPositive (aux);
 
   printDuplicates ();
-
+#ifdef HINTS
   printHints();
+#endif
   return 1;
 }
