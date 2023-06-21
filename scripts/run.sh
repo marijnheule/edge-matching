@@ -1,3 +1,5 @@
+# assumes that cadical is in the path
+
 INSTANCE=$1
 POSTFIX=$2
 TIMEOUT=3600

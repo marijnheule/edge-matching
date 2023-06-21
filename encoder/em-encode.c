@@ -703,7 +703,7 @@ void printHeader () {
 #ifdef KNF
   printf ("p knf %i %i\n", nVar, nCls);
 #else
-  printf ("p cnf %i %i\n", nVar, nCls);
+  printf ("p cnf %i %i\n", 10 * nVar, nCls); // temporary hack
 #endif
 }
 
